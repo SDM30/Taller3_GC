@@ -18,7 +18,7 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(PNG REQUIRED)
 
 # -- Executables
-add_executable(heightmap src/heightmap.cxx)
+add_executable(heightmap src/heightmap.cxx src/CullPointsHelper.cxx)
 target_link_libraries(heightmap CGAL::CGAL)
 target_link_libraries(heightmap PNG::PNG)
 
