@@ -140,8 +140,7 @@ CullPointsHelper::avgHeight(std::vector<CullPointsHelper::TPoint> neighbors) {
 }
 
 /**
- * @brief Calcula la desviación estándar de alturas usando la fórmula:
- *        sigma = sqrt(E[X²] - E[X]²)
+ * @brief Calcula la desviación estándar muestral de alturas
  *        donde X son las alturas de los vecinos
  */
 CullPointsHelper::TReal
@@ -150,31 +149,41 @@ CullPointsHelper::sigmaHeight(std::vector<CullPointsHelper::TPoint> neighbors) {
     return 0.0;
 
   TReal sum = 0.0;
-  TReal squareSum = 0.0;
   int count = 0;
 
+  // Primera pasada: calcular la media
   for (const auto &point : neighbors) {
     auto vertex = original_tri.nearest_vertex(point);
     if (vNotEmptyOrInf(vertex, true)) {
       TReal height = vertex->info();
-      sum += height;                // Acumular para la media
-      squareSum += height * height; // Acumular para E[X²]
+      sum += height;
       count++;
     }
   }
 
-  if (count == 0)
+  if (count < 2) // Necesitamos al menos 2 puntos para varianza muestral
     return 0.0;
 
-  // Varianza = E[X²] - (E[X])²
   TReal avg = sum / count;
-  TReal sigma = (squareSum / count) - (avg * avg);
+
+  // Segunda pasada: calcular suma de cuadrados de las diferencias
+  TReal sumSquaredDiff = 0.0;
+  for (const auto &point : neighbors) {
+    auto vertex = original_tri.nearest_vertex(point);
+    if (vNotEmptyOrInf(vertex, true)) {
+      TReal height = vertex->info();
+      TReal diff = height - avg;
+      sumSquaredDiff += diff * diff;
+    }
+  }
+
+  TReal sampleVariance = sumSquaredDiff / (count - 1);
 
   // Corrección numérica para evitar valores negativos muy pequeños
-  if (sigma < 0 && sigma > -1e-10)
-    sigma = 0.0;
+  if (sampleVariance < 0 && sampleVariance > -1e-10)
+    sampleVariance = 0.0;
 
-  return std::sqrt(sigma);
+  return std::sqrt(sampleVariance);
 }
 
 /**
